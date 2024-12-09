@@ -26,12 +26,6 @@ net_lite.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
 # Initialize the webcam
 cap = cv2.VideoCapture(0)
 
-# Attempt to disable autofocus
-#autofocus_disabled = cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)  # Disable autofocus (if supported)
-
-#if not autofocus_disabled:
- #   print("Autofocus could not be disabled. Check your webcam settings or use external software.")
-
 # Get screen size
 screen_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
 screen_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -51,10 +45,12 @@ while True:
 
     # Rotate the frame 90 degrees clockwise
     frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
-    
+    # Flip the frame horizontally
+    frame = cv2.flip(frame, 1)
+
     # Resize the frame to full screen size
-    #frame2 = cv2.resize(frame, (int(840), int(480)))
     frame = cv2.resize(frame, (int(2160), int(3840)))
+    #frame = cv2.resize(frame, (int(screen_width), int(screen_height)))
 
     height, width, channels = frame.shape
 
@@ -110,7 +106,7 @@ while True:
     cv2.putText(frame, fps_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
 
     cv2.namedWindow("YOLO Object Detection", cv2.WND_PROP_FULLSCREEN)
-    cv2.setWindowProperty("YOLO Object Detection", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+    cv2.setWindowProperty("YOLO Object Detection", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)  
     cv2.imshow("YOLO Object Detection", frame)
 
     key = cv2.waitKey(1)
