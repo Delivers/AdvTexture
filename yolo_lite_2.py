@@ -3,7 +3,8 @@ import numpy as np
 import time
 
 # Load YOLOv2
-net_v2 = cv2.dnn.readNet("yolov2.weights", "yolov2.cfg")
+#net_v2 = cv2.dnn.readNet("yolov2.weights", "yolov2.cfg")
+net_v2 = cv2.dnn.readNet("/home/dlvr/Documents/AdvTexture/yolov2.weights", "/home/dlvr/Documents/AdvTexture/yolov2.cfg")
 layer_names_v2 = net_v2.getLayerNames()
 output_layers_v2 = [layer_names_v2[i - 1] for i in net_v2.getUnconnectedOutLayers().flatten()]
 
@@ -23,7 +24,13 @@ net_lite.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
 net_lite.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
 
 # Initialize the webcam
-cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+cap = cv2.VideoCapture(0)
+
+# Attempt to disable autofocus
+#autofocus_disabled = cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)  # Disable autofocus (if supported)
+
+#if not autofocus_disabled:
+ #   print("Autofocus could not be disabled. Check your webcam settings or use external software.")
 
 # Get screen size
 screen_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
@@ -41,8 +48,14 @@ while True:
         print("Failed to grab frame")
         break
 
+
+    # Rotate the frame 90 degrees clockwise
+    frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    
     # Resize the frame to full screen size
-    frame = cv2.resize(frame, (int(screen_width), int(screen_height)))
+    #frame2 = cv2.resize(frame, (int(840), int(480)))
+    frame = cv2.resize(frame, (int(2160), int(3840)))
+
     height, width, channels = frame.shape
 
     # Detecting objects
@@ -86,8 +99,8 @@ while True:
             x, y, w, h = boxes[i]
             label = str(classes[class_ids[i]])
             color = (0, 255, 0)  # Color for the bounding box
-            cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
-            cv2.putText(frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+            cv2.rectangle(frame, (x, y), (x + w, y + h), color, 10)
+            cv2.putText(frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, color, 2)
 
     # Calculate and display FPS
     fps_end_time = time.time()
