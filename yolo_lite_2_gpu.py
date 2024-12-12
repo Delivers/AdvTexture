@@ -3,7 +3,6 @@ import numpy as np
 import time
 
 # Load YOLOv2
-#net_v2 = cv2.dnn.readNet("yolov2.weights", "yolov2.cfg")
 net_v2 = cv2.dnn.readNet("yolov2.weights", "yolov2.cfg")
 layer_names_v2 = net_v2.getLayerNames()
 output_layers_v2 = [layer_names_v2[i - 1] for i in net_v2.getUnconnectedOutLayers().flatten()]
@@ -18,22 +17,21 @@ with open("coco.names", "r") as f:
     classes = [line.strip() for line in f.readlines()]
 
 # Set preferred backend and target for both networks
-net_v2.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
-net_v2.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
-net_lite.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
-net_lite.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+net_v2.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+net_v2.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
+net_lite.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+net_lite.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
 
 # Initialize the webcam
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
-# Get screen size
-screen_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-screen_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
 # Initialize variables for FPS calculation
 fps_start_time = 0
 fps = 0
 use_yolo_lite = True  # Set to False to use YOLOv2
+
+
 
 while True:
     fps_start_time = time.time()
@@ -43,19 +41,23 @@ while True:
         break
 
 
-    # Rotate the frame 90 degrees clockwise
+    # Resize the frame to full screen size
+    #frame = cv2.resize(frame, (2160, 3840))
+
+    # Stretch the frame horizontally by a factor
+    stretch_factor = 1  # Adjust this factor as needed
+    stretched_width = int(frame.shape[1] * stretch_factor)
+    frame = cv2.resize(frame, (stretched_width, frame.shape[0]))
+
+     # Rotate the frame 90 degrees clockwise
     frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
     # Flip the frame horizontally
     frame = cv2.flip(frame, 1)
 
-    # Resize the frame to full screen size
-    frame = cv2.resize(frame, (int(2160), int(3840)))
-    #frame = cv2.resize(frame, (int(screen_width), int(screen_height)))
-
     height, width, channels = frame.shape
 
     # Detecting objects
-    blob = cv2.dnn.blobFromImage(frame, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
+    blob = cv2.dnn.blobFromImage(frame, 0.00392, (312, 312), (0, 0, 0), True, crop=False)
     
     if use_yolo_lite:
         net_lite.setInput(blob)
@@ -95,8 +97,8 @@ while True:
             x, y, w, h = boxes[i]
             label = str(classes[class_ids[i]])
             color = (0, 255, 0)  # Color for the bounding box
-            cv2.rectangle(frame, (x, y), (x + w, y + h), color, 10)
-            cv2.putText(frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.5, color, 2)
+            cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+            cv2.putText(frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
     # Calculate and display FPS
     fps_end_time = time.time()
@@ -104,9 +106,10 @@ while True:
     fps = 1 / time_diff
     fps_text = "FPS: {:.2f}".format(fps)
     cv2.putText(frame, fps_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-
+    # Create a fullscreen window
     cv2.namedWindow("YOLO Object Detection", cv2.WND_PROP_FULLSCREEN)
-    cv2.setWindowProperty("YOLO Object Detection", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)  
+    cv2.setWindowProperty("YOLO Object Detection", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
     cv2.imshow("YOLO Object Detection", frame)
 
     key = cv2.waitKey(1)
